@@ -1,6 +1,7 @@
 import os
 import cv2
 import shutil
+import pathlib
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -11,10 +12,13 @@ def UB_data_setup(data_dir):
 
 	#assumptions:
 	# the original dataset is mostly even across data classes
-	folders = [item.name for item in data_dir.glob('*') if item.name != "LICENSE.txt"]
+	# the folder is made up of folders, each which hold a specific 
+	#class of data that the data should be labeled as
 	old_path = data_dir
-	new_path = os.path.join(data_dir, '..', 'flowers_ub')
+	new_path = old_path + '_ub' #just add ub to the original file name
 	os.makedirs(new_path)
+	data_dir = pathlib.Path(data_dir)
+	folders = [item.name for item in data_dir.glob('*') if item.name != "LICENSE.txt"]
 
 
 	if len(folders) > 3: 
@@ -26,7 +30,7 @@ def UB_data_setup(data_dir):
 	findex = 0
 
 	for folder in folders:
-		
+
 		copy_from = os.path.join(old_path, folder)
 		copy_to = os.path.join(new_path, folder)
 		os.makedirs(copy_to)
@@ -52,7 +56,7 @@ def UB_data_setup(data_dir):
 
 		findex += 1 #move on to next file
 
-	return new_path
+	return pathlib.Path(new_path)
 
 
 def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
@@ -66,7 +70,7 @@ def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
         path = os.path.join(data_dir,class_name)  # create path to flowers
         class_num = CLASS_NAMES.index(class_name)  # get the classification 0-4
         class_len = len(os.listdir(path))
-        class_split = class_len * 0.75
+        class_split = class_len * 0.8
 
         for img in os.listdir(path):  
            
