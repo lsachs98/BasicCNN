@@ -1,10 +1,59 @@
 import os
 import cv2
+import shutil
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
+
+def UB_data_setup(data_dir):
+
+	#assumptions:
+	# the original dataset is mostly even across data classes
+	folders = [item.name for item in data_dir.glob('*') if item.name != "LICENSE.txt"]
+	old_path = data_dir
+	new_path = os.path.join(data_dir, '..', 'flowers_ub')
+	os.makedirs(new_path)
+
+
+	if len(folders) > 3: 
+		#step through classes and select a couple evenly spread out
+		folders = folders[::(len(folders)//3)]
+		#shorten to 3 or fewer classes
+		folders = folders[:3]
+
+	findex = 0
+
+	for folder in folders:
+		
+		copy_from = os.path.join(old_path, folder)
+		copy_to = os.path.join(new_path, folder)
+		os.makedirs(copy_to)
+		copy_cap = len(os.listdir(copy_from))
+
+		if findex > 0: #only copy over part of files if it's not the first folder
+		#if there are 3 folders now, reduce the second 2 by 90% (multiply by .1)
+		#if there are 2 folders now, reduce the second by 80% (multiply by .2)
+		#didn't want to unbalance the files too much in the case of 2 classes
+			copy_cap = copy_cap * .2 / (len(folders) - 1)
+
+		imindex = 0
+
+		for img in os.listdir(copy_from):
+
+			source = os.path.join(copy_from, img)
+			destination = os.path.join(copy_to, img)
+			shutil.copyfile(source, destination)
+			imindex += 1
+
+			if imindex > copy_cap: #we've copied over the amount we want to
+				break
+
+		findex += 1 #move on to next file
+
+	return new_path
+
 
 def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
 
@@ -17,7 +66,7 @@ def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
         path = os.path.join(data_dir,class_name)  # create path to flowers
         class_num = CLASS_NAMES.index(class_name)  # get the classification 0-4
         class_len = len(os.listdir(path))
-        class_split = class_len * 3 // 4
+        class_split = class_len * 0.75
 
         for img in os.listdir(path):  
            
