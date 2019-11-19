@@ -4,9 +4,15 @@ import shutil
 import pathlib
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
+
+def display_image(img_data_rgb):
+	fix_colors = cv2.cvtColor(img_data_rgb, cv2.COLOR_BGR2RGB)
+	plt.imshow(fix_colors)
+	plt.show()
 
 def UB_data_setup(data_dir):
 
@@ -59,19 +65,22 @@ def UB_data_setup(data_dir):
 	return pathlib.Path(new_path)
 
 
-def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
+def data_preprocess(data_dir, IMG_SIZE, CLASS_NAMES):
 
     training_data = []
     testing_data = []
     distribution = []
 
+    #use the folder names to generate a file path for each folder
     for class_name in CLASS_NAMES:
+
         class_count = 0
         path = os.path.join(data_dir,class_name)  # create path to flowers
         class_num = CLASS_NAMES.index(class_name)  # get the classification 0-4
         class_len = len(os.listdir(path))
         class_split = class_len * 0.8
 
+        #check everything in the folder
         for img in os.listdir(path):  
            
             img_array = cv2.imread(os.path.join(path,img) ,cv2.IMREAD_COLOR)  # convert to array
@@ -79,17 +88,13 @@ def create_training_data(data_dir, IMG_SIZE, CLASS_NAMES):
 
             if class_count < class_split:
                 training_data.append([new_array, class_num])
+                # add this to our training data
 
             else:
                 testing_data.append([new_array, class_num])
-                  # add this to our training_data or testing_data
+                  # add this to our testing data
 
             class_count+=1
-            #plt.imshow(img_array)  # graph it
-            #plt.show()
-            #break
-            #except Exception as e:
-            #    print("general exception", e, os.path.join(path,img))
 
         distribution.append(class_count)
         
@@ -101,12 +106,14 @@ def restructure_data(training_data):
     X = []
     y = []
 
-    for features,label in training_data:
-        X.append(features)
+    #split up data	
+    for image, label in training_data:
+        X.append(image)
         y.append(label)
     
     X = np.array(X)
 
+    #flip X so that the format of the array fits the model
     X_shape = (-1,) + X.shape[1:]
 
     X.reshape(X_shape)
